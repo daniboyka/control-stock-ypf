@@ -1,12 +1,18 @@
-import { useState } from "react";
-import Login from "./componentes/Login";
-import FilaProducto from "./componentes/FilaProducto";
+import { useState, useEffect } from "react";
+import Login from "./componentes/Login.jsx";
+import VistaPlayero from "./componentes/VistaPlayero.jsx"; // ¡Faltaba esta importación! [cite: 2026-01-16]
+import VistaBoxes from "./componentes/VistaBoxes.jsx"; // ¡Y esta también! [cite: 2026-01-16]
 import { PRODUCTOS_INICIALES } from "./datos.mock.js";
 
 function App() {
-  const [sesion, setSesion] = useState(null);
-  const [observaciones, setObservaciones] = useState(""); // 1. Nuevo estado para notas [cite: 2026-01-16]
-  // Creamos el estado para todos los productos basados en el MOCK [cite: 2026-01-16]
+  const [usuario, setUsuario] = useState(null); // Usaremos 'usuario' para todo [cite: 2026-01-16]
+  const [observaciones, setObservaciones] = useState("");
+  // 1. Agregamos un estado para guardar las horas de los hitos [cite: 2026-01-16]
+  const [hitosHora, setHitosHora] = useState({
+    inicioControl: null,
+    finControl: null,
+  });
+
   const [productos, setProductos] = useState(
     PRODUCTOS_INICIALES.map((p) => ({
       ...p,
@@ -16,11 +22,28 @@ function App() {
     })),
   );
 
-  if (!sesion) {
-    return <Login alIniciarSesion={(datos) => setSesion(datos)} />;
-  }
+  // 2. Efecto para detectar cuando terminan de cargar el inicio [cite: 2026-01-16]
+  useEffect(() => {
+    // Verificamos que todos los productos tengan algo escrito en 'inic'
+    const todosCargados = productos.every(
+      (p) => p.inic !== "" && p.inic !== null,
+    );
 
-  // Función para que el hijo le avise al padre cuando un input cambia [cite: 2026-01-16]
+    if (todosCargados && !hitosHora.inicioControl && productos.length > 0) {
+      setHitosHora((prev) => ({
+        ...prev,
+        inicioControl: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+    }
+  }, [productos, hitosHora.inicioControl]);
+
+  const manejarLogin = (datosDelTurno) => {
+    setUsuario(datosDelTurno);
+  };
+
   const actualizarProducto = (id, campo, valor) => {
     setProductos((prev) =>
       prev.map((p) => (p.id === id ? { ...p, [campo]: valor } : p)),
@@ -28,132 +51,64 @@ function App() {
   };
 
   const manejarFinalizarTurno = () => {
-    // 1. Buscamos si hay algún producto que no cierre [cite: 2026-01-16]
     const productosConDiscrepancia = productos.filter((p) => {
-      const final =
-        (Number(p.inic) || 0) + (Number(p.repo) || 0) - (Number(p.vta) || 0);
-      const ideal = p.stockIdealActual || p.stockIdealBase;
-      return final + (Number(p.vta) || 0) !== ideal;
-      // O más simple: si el stock físico + reposición no iguala al ideal esperado [cite: 2026-01-16]
+      // Forzamos a que todo sea número antes de operar
+      const inicial = Number(p.inic) || 0;
+      const reposicion = Number(p.repo) || 0;
+      const ventas = Number(p.vta) || 0;
+
+      // El stock que queda físicamente en el estante
+      const stockFisicoFinal = inicial + reposicion - ventas;
+
+      // El stock que DEBERÍA haber según el sistema
+      const idealEsperado = Number(p.stockIdealActual || p.stockIdealBase);
+
+      // Solo hay error si el stock físico final NO es igual al ideal esperado
+      return stockFisicoFinal !== idealEsperado;
     });
 
     let mensaje = "¿Deseas finalizar el turno?";
 
-    // 2. Si hay errores, cambiamos el mensaje [cite: 2026-01-16]
     if (productosConDiscrepancia.length > 0) {
-      mensaje = `⚠️ ATENCIÓN: Hay ${productosConDiscrepancia.length} productos que no coinciden con el stock ideal. 
-    
-¿Confirmaste que las ventas y reposiciones estén bien cargadas?`;
+      // Esto te ayudará a ver en consola exactamente qué producto falla y por qué [cite: 2026-01-16]
+      console.log("Productos con error:", productosConDiscrepancia);
+      mensaje = `⚠️ ATENCIÓN: Hay ${productosConDiscrepancia.length} productos que no coinciden con el stock ideal.`;
     }
 
     if (window.confirm(mensaje)) {
-      console.log("DATOS FINALES LISTOS PARA ENVIAR:", {
-        fecha: new Date().toLocaleDateString(),
-        sesion,
+      console.log("DATOS FINALES ENVIADOS:", {
+        usuario,
         productos,
-        observaciones,
+        hitos: hitosHora,
       });
-      // Aquí es donde mandaremos los datos a Supabase [cite: 2026-01-16]
-      alert("Turno finalizado con éxito. Datos listos para la base de datos.");
-      setSesion(null);
+      alert("Turno finalizado con éxito.");
+      setUsuario(null);
       setObservaciones("");
+      setHitosHora({ inicioControl: null, finControl: null });
     }
   };
 
   return (
-    <div className="container">
-      <header
-        style={{
-          marginBottom: "20px",
-          borderBottom: "2px solid #ffcc00",
-          paddingBottom: "10px",
-        }}
-      >
-        <h1>YPF - {sesion.turno}</h1>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <p>
-            <strong>Responsables:</strong> {sesion.resp1} y {sesion.resp2}
-          </p>
-          <p>
-            <strong>Inicio:</strong> {sesion.horaInicio}
-          </p>
-        </div>
-      </header>
-
-      <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ backgroundColor: "#f2f2f2" }}>
-            <th>Producto</th>
-            <th>Inic (Físico)</th>
-            <th>Repo</th>
-            <th>Vta</th>
-            <th>Fin</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((prod) => (
-            <FilaProducto
-              key={prod.id}
-              producto={prod}
-              stockAnterior={prod.stockIdealActual || prod.stockIdealBase}
-              onChange={actualizarProducto} // Le pasamos el "teléfono" para que nos avise [cite: 2026-01-16]
-            />
-          ))}
-        </tbody>
-      </table>
-
-      {/* 3. Módulo de Observaciones [cite: 2026-01-16] */}
-      <div style={{ marginTop: "20px" }}>
-        <label
-          style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}
-        >
-          Observaciones del turno:
-        </label>
-        <textarea
-          value={observaciones}
-          onChange={(e) => setObservaciones(e.target.value)}
-          placeholder="Ej: Faltó aceite Elaion por falta de stock en depósito..."
-          style={{
-            width: "100%",
-            height: "80px",
-            padding: "10px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-          }}
+    <div className="App">
+      {!usuario ? (
+        <Login alIniciarSesion={manejarLogin} />
+      ) : usuario.rol === "playero" ? (
+        <VistaPlayero
+          usuario={usuario}
+          productos={productos}
+          actualizarProducto={actualizarProducto}
+          alFinalizarTurno={manejarFinalizarTurno}
+          observaciones={observaciones}
+          setObservaciones={setObservaciones}
+          hitosHora={hitosHora}
         />
-      </div>
-
-      <footer style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-        <button
-          onClick={manejarFinalizarTurno}
-          style={{
-            backgroundColor: "#e11d48",
-            color: "white",
-            padding: "10px 20px",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          Finalizar Turno
-        </button>
-
-        {/* Botón extra para imprimir que usaremos después [cite: 2026-01-16] */}
-        <button
-          onClick={() => window.print()}
-          style={{
-            backgroundColor: "#2563eb",
-            color: "white",
-            padding: "10px 20px",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Imprimir Reporte
-        </button>
-      </footer>
+      ) : (
+        <VistaBoxes
+          productos={productos}
+          alCambiarRepo={actualizarProducto}
+          alFinalizar={() => setUsuario(null)}
+        />
+      )}
     </div>
   );
 }
