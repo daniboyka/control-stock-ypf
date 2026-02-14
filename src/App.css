@@ -2,7 +2,85 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
-  text-align: center;
+  /* text-align: center; Se elimina para permitir alineación natural en componentes */
+}
+
+@media (max-width: 768px) {
+  #root {
+    padding: 0.5rem; /* Mucho menos padding en móvil */
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* Estilos globales para tablas responsivas y legibilidad */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  color: #000; /* Forzar texto negro para legibilidad */
+}
+
+/* Encabezados oscuros: texto blanco */
+thead tr th {
+  color: white !important;
+  text-align: center; /* Centrar encabezados por defecto */
+  white-space: nowrap; /* Evitar saltos de línea en títulos cortos */
+}
+
+/* Celdas del cuerpo */
+tbody tr td {
+  vertical-align: middle;
+}
+
+/* Inputs numéricos dentro de tablas */
+table input[type="number"],
+table input[type="text"] {
+  color: #000 !important; /* Texto negro en inputs */
+  text-align: center; /* Números centrados */
+  font-weight: bold;
+}
+
+/* Inputs deshabilitados */
+input:disabled {
+  color: #333 !important; /* Gris oscuro en vez de gris claro */
+  background-color: #e9ecef;
+  opacity: 1; /* Asegurar opacidad en iOS */
+}
+
+/* Placeholders */
+::placeholder {
+  color: #666;
+  opacity: 1;
+}
+
+/* Forzar color negro en textos generales para legibilidad */
+h1, h2, h3, h4, h5, h6, label, p, li, span {
+  color: #000;
+}
+
+/* Excepciones para textos que deben ser blancos (botones, headers de tablas, tabs activos) */
+button, 
+.tab-active,
+thead th,
+.white-text {
+  color: inherit; /* O lo que tengan definido específicamente */
+}
+
+/* Asegurar que los botones con fondo oscuro tengan texto blanco si no está definido */
+button[style*="background-color: #"], 
+button[style*="backgroundColor: #"] {
+  /* Esto es difícil de targetear con CSS puro si son estilos inline, 
+     pero la mayoría de los botones ya tienen color: white en sus estilos inline o clases */
 }
 
 .logo {

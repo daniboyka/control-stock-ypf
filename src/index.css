@@ -3,9 +3,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: light; /* Forzar modo claro */
+  color: #213547; /* Texto oscuro por defecto */
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,45 +24,68 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #f8f9fa; /* Fondo claro general */
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Clases Utilitarias Responsivas */
+.container-responsive {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
-button {
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Suavidad en iOS */
+  margin-bottom: 1rem;
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* Inputs y Botones amigables para tactil */
+input, select, button {
+  font-size: 16px !important; /* Evita zoom automático en iOS */
+  min-height: 44px; /* Tamaño mínimo táctil recomendado */
+}
+
+/* Ajustes específicos para móviles */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8em;
   }
-  a:hover {
-    color: #747bff;
+  
+  h2 {
+    font-size: 1.5em;
   }
-  button {
-    background-color: #f9f9f9;
+
+  .login-container {
+    margin: 20px auto !important;
+    width: 95% !important;
+    padding: 15px !important;
+  }
+
+  /* Ajustar botones de tabs en login */
+  .tab-button {
+    padding: 8px 5px !important;
+    font-size: 0.9em !important;
+  }
+
+  /* Tablas compactas en móvil */
+  th, td {
+    padding: 8px 5px !important;
+    font-size: 0.9em;
+  }
+
+  /* Inputs dentro de tablas más pequeños pero tocables */
+  td input {
+    width: 60px !important;
+    padding: 5px !important;
+    text-align: center;
   }
 }
+
